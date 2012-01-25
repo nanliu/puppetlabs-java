@@ -12,48 +12,39 @@
 #
 # [Remember: No empty lines between comments and class definition]
 class java(
-  $distribution = 'jdk',
-  $version      = 'installed'
+  $distribution      = hiera('java_distribution'),
+  $version           = hiera('java_version', 'installed'),
+  $response_file     = hiera('java_response_file', undef),
+  $response_template = hiera('java_response_template', undef)
 ) {
 
   validate_re($distribution, '^jdk$|^jre$|^java.*$')
   validate_re($version, 'installed|^[._0-9a-zA-Z:-]+$')
 
-  anchor { 'java::begin': }
-  anchor { 'java::end': }
-
-  case $operatingsystem {
-
-    centos, redhat, oel: {
-
-      class { 'java::package_redhat':
-        version      => $version,
-        distribution => $distribution,
-        require      => Anchor['java::begin'],
-        before       => Anchor['java::end'],
-      }
-
+  case $distribution {
+    'jre', 'jdk': {
+      $package_name = hiera("java_${distribution}_package_name")
     }
-
-    debian, ubuntu: {
-
-      $distribution_debian = $distribution ? {
-        jdk => 'sun-java6-jdk',
-        jre => 'sun-java6-jre',
-      }
-      class { 'java::package_debian':
-        version      => $version,
-        distribution => $distribution_debian,
-        require      => Anchor['java::begin'],
-        before       => Anchor['java::end'],
-      }
-
-    }
-
     default: {
-      fail("operatingsystem $operatingsystem is not supported")
+      $package_name = $distribution
     }
+  }
 
+  validate_re($package_name, '^[._0-9a-zA-Z:-]+$')
+
+  package { 'java':
+    ensure       => $version,
+    name         => $package_name,
+    responsefile => $response_file,
+  }
+
+  case $::osfamily {
+    'debian': {
+      file { $response_file:
+        content => template($response_template),
+        before  => Package['java'],
+      }
+    }
   }
 
 }
