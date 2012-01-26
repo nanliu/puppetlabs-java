@@ -1,3 +1,7 @@
+2012-01-26 Nan Liu <nan@puppetlabs.com> - 0.2.0
+* This version requires hiera.
+* Remove anchor resources and redhat/debian class.
+
 2011-06-16 Jeff McCune <jeff@puppetlabs.com> - 0.1.5
 * Add Debian based distro (Lucid) support
 
